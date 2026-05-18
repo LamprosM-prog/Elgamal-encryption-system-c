@@ -8,7 +8,7 @@ int main() {
     mpz_init(p);
     mpz_init(q);
 
-
+    
     gmp_randstate_t state;
     gmp_randinit_mt(state);
     gmp_randseed_ui(state, time(NULL));
