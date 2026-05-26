@@ -12,15 +12,23 @@ int main() {
     gmp_randinit_mt(state);
 
     // /dev/urandom seed
-    uint64_t seed;
+    mpz_t seed_mpz;
+    mpz_init(seed_mpz);
+   
     FILE *f = fopen("/dev/urandom", "rb");
-    fread(&seed, sizeof(seed), 1, f);
+    unsigned char seed_buf[64]; 
+    fread(seed_buf, 1, 64, f);
     fclose(f);
-    gmp_randseed_ui(state, seed);
+    mpz_import(seed_mpz, 64, 1, 1, 0, 0, seed_buf);
+
+    gmp_randseed(state, seed_mpz);
+    mpz_clear(seed_mpz);
+
 
     int attempts = 0;
     while (1) {
         mpz_urandomb(q, state, 4095);
+        mpz_setbit(q, 4094);
         mpz_nextprime(q, q);
 
         mpz_mul_ui(p, q, 2);

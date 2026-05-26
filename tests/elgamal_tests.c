@@ -38,7 +38,8 @@ int main(){
     mpz_init(ciphers.c2);
     
     encrypt(&ciphers, msg_mpz, y, &params);
-
+    printf("c1 size: %zu bytes\n", (mpz_sizeinbase(ciphers.c1, 2) + 7) / 8);
+    printf("c2 size: %zu bytes\n", (mpz_sizeinbase(ciphers.c2, 2) + 7) / 8);
     // print first 16 chars of c1
     char* c1_str = mpz_get_str(NULL, 16, ciphers.c1);
     printf("c1: %.16s...\n", c1_str);   
