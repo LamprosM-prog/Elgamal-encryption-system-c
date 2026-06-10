@@ -4,6 +4,26 @@
 #include <stdlib.h>
 #include <time.h>
 
+
+
+
+static void random_scalar(const mpz_t q, mpz_t out) {
+    size_t n_bytes = (mpz_sizeinbase(q, 2) + 7) / 8;
+    uint8_t *buf = malloc(n_bytes);
+    FILE *f = fopen("/dev/urandom", "rb");
+    do {
+        fread(buf, 1, n_bytes, f);
+        mpz_import(out, n_bytes, 1, 1, 0, 0, buf);
+        mpz_mod(out, out, q);
+    } while (mpz_cmp_ui(out, 0) == 0);
+    fclose(f);
+    explicit_bzero(buf, n_bytes);
+    free(buf);
+}
+
+
+
+
 void generate_param(ElGamalParam* params){
     mpz_init(params->p);
     mpz_init(params->q);
@@ -22,37 +42,18 @@ void generate_param(ElGamalParam* params){
 }
 
 void generate_skey(mpz_t result, mpz_t q){
-    gmp_randstate_t state;
-    gmp_randinit_mt(state);
-    unsigned long seed;
-    FILE *f = fopen("/dev/urandom", "rb");
-    fread(&seed, sizeof(seed), 1, f);
-    fclose(f);
-    gmp_randseed_ui(state, seed);
-    mpz_t range;
-    mpz_init(range);
-   
-    mpz_sub_ui(range,q,1); //range = q-1 
-    mpz_urandomm(result, state, range);
-    mpz_add_ui(result, result, 1); // result = result + 1 (incase result = 0)
-    
-
-    mpz_clear(range);
-    gmp_randclear(state);
+    random_scalar(q, result);
 }
 
 void generate_pkey(mpz_t result, mpz_t g, mpz_t x, mpz_t p){
     mpz_powm_sec(result, g, x, p);
 }
 
+
+
+
+
 void encrypt(ElgamalCiphertext* result, mpz_t msg, mpz_t pkey, ElGamalParam* params){
-    gmp_randstate_t state;
-    gmp_randinit_mt(state);  
-    unsigned long seed;
-    FILE *f = fopen("/dev/urandom", "rb");
-    fread(&seed, sizeof(seed), 1, f);
-    fclose(f);
-    gmp_randseed_ui(state, seed);
     mpz_t range;
     mpz_init(range);  
     mpz_t k;
@@ -61,10 +62,7 @@ void encrypt(ElgamalCiphertext* result, mpz_t msg, mpz_t pkey, ElGamalParam* par
     mpz_init(temp);
 
     // random k in (1, q-1)
-    mpz_sub_ui(range,params->q,1);
-    mpz_urandomm(k, state, range);
-    mpz_add_ui(k,k,1);
-    
+   random_scalar(params->q, k);
     //c1 = g^k mod p
     mpz_powm_sec(result->c1 ,params->g,k,params->p);
 
@@ -74,7 +72,6 @@ void encrypt(ElgamalCiphertext* result, mpz_t msg, mpz_t pkey, ElGamalParam* par
     mpz_mod(result->c2, result->c2, params->p);
 
     mpz_clear(range);
-    gmp_randclear(state);
     mpz_clear(k);
     mpz_clear(temp);
 }

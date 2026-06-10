@@ -27,8 +27,8 @@ int main() {
 
     int attempts = 0;
     while (1) {
-        mpz_urandomb(q, state, 4095);
-        mpz_setbit(q, 4094);
+        mpz_urandomb(q, state, 2048);
+        mpz_setbit(q, 2045);
         mpz_nextprime(q, q);
 
         mpz_mul_ui(p, q, 2);
